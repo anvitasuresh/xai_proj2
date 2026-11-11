@@ -1,9 +1,0 @@
-# GPU env (DCC): judge scoring, reply generation, later GRPO training.
-# Create with: bash slurm/setup_env.sh   (or: conda env create -f environment-gpu.yml)
-name: tutorbias-gpu
-channels: [conda-forge]
-dependencies:
-  - python=3.11
-  - pip
-  - pip:
-      - -e .[gpu,api,track,dev]

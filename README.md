@@ -31,7 +31,8 @@ src/tutorbias/
   audit/                 counterfactual pairs, RewardBench RM scoring, gap/flip analysis (E2)
   textutil.py            number extraction, answer-leak detection
   tracking.py            optional Weights & Biases logging
-slurm/                   Duke DCC job scripts (env setup, data, replies, judge)
+scripts/                 setup_local.sh (envs) and run_stage.sh (one command per stage)
+slurm/                   Duke DCC job scripts (thin wrappers around run_stage.sh)
 data/                    names list, labels, DATASHEET.md (generated data is gitignored)
 docs/                    labeling guide, design decisions, timeline
 tests/                   pytest suite (CPU only, runs in CI)
@@ -39,61 +40,57 @@ tests/                   pytest suite (CPU only, runs in CI)
 
 ## Setup
 
-Two conda environments, because Multi-VALUE pins old spaCy/nltk/stanza versions that conflict with vLLM:
+Two Python environments, because Multi-VALUE pins old spaCy/nltk/stanza versions that conflict with vLLM. One script creates both with [uv](https://docs.astral.sh/uv/) (no conda needed):
 
-| Env | Python | Used for |
-|---|---|---|
-| `tutorbias-data` | 3.10 | building dialect variants (CPU) |
-| `tutorbias-gpu` | 3.11 | reply generation, judge scoring, later GRPO (GPU) |
-
-On Duke DCC (login node, one time):
+| Env | Python | Used for | Hardware |
+|---|---|---|---|
+| `.venv-data` | 3.10 | dialect variants, labeling app, calibration | any laptop |
+| `.venv-gpu` | 3.11 | reply generation, judge scoring, RM audit, later GRPO | one GPU with 24 GB+ (L4, A10, A6000, A100) |
 
 ```bash
 git clone https://github.com/anvitasuresh/xai_proj2 && cd xai_proj2
-# edit the three paths at the top of slurm/env.sh if needed
-bash slurm/setup_env.sh      # creates both envs, downloads spaCy/stanza/NLTK data and Qwen weights
-wandb login                  # optional; everything also logs locally
+bash scripts/setup_local.sh data   # laptop: CPU steps only
+bash scripts/setup_local.sh        # GPU machine: both envs
 ```
 
-On a laptop (tests, labeling app, calibration only):
+## Reproducing
+
+Every stage is one command, and it runs the same way on a laptop, Colab, a rented GPU, or Duke DCC:
 
 ```bash
-pip install -e ".[dev,label]"
-pytest -q
-```
-
-## Reproducing stage 1
-
-```bash
-# 1. Items and stuck messages (login node, seconds)
-conda activate $CONDA_ENVS/tutorbias-data
-python -m tutorbias.data.build items      # -> data/processed/items_{rl_train,audit,test}.jsonl
-python -m tutorbias.data.build messages   # -> data/processed/messages_*.jsonl
-
-# 2. Dialect + name variants (CPU array job, 8 shards)
-sbatch slurm/01_data.sbatch               # -> data/processed/variants.jsonl, variants_stats.json,
-                                          #    variant_hand_check.csv
-
-# 3. Tutor reply pool (GPU) + blinded label set
-sbatch slurm/02_replies.sbatch            # -> data/processed/replies/reply_pool.jsonl,
-                                          #    data/labels/label_set.{jsonl,csv}, label_key.jsonl
-
-# 4. Judge scores on the label set, with post-hoc rationales (GPU)
-sbatch slurm/03_judge.sbatch              # -> results/judge/label_set_scores.jsonl
-
-# 5. Label (laptop): copy data/labels/ over, then
+bash scripts/run_stage.sh items      # CPU  GSM8K items + stuck messages
+bash scripts/run_stage.sh variants   # CPU  dialect + name variants (parallel shards; ~1-3 h)
+bash scripts/run_stage.sh replies    # GPU  tutor reply pool + blinded label set
+bash scripts/run_stage.sh judge      # GPU  judge scores + rationales on the label set
+# label on a laptop, then calibrate (E1):
 streamlit run src/tutorbias/labeling/app.py -- --labeler anvita
 streamlit run src/tutorbias/labeling/app.py -- --labeler second --double-only
-
-# 6. Calibrate (laptop): iterate on dev, report test once
-python -m tutorbias.labeling.calibrate --split dev
-python -m tutorbias.labeling.calibrate --split test   # -> results/calibration/test/report.md
+python -m tutorbias.labeling.calibrate --split dev    # iterate on the rubric
+python -m tutorbias.labeling.calibrate --split test   # once, after the rubric is frozen
+bash scripts/run_stage.sh audit      # GPU  E2 reward-model audit
 ```
+
+All GPU steps are resumable: if a session dies, rerun the same command and it continues where it stopped.
+
+**On Duke DCC:** run `bash slurm/setup_env.sh` once on a login node, then `sbatch slurm/01_data.sbatch` (after `items`), `02_replies`, `03_judge`, `04_audit`. Each job just calls `scripts/run_stage.sh`.
+
+**On Colab (Pro, A100 or L4 runtime; a T4 is too small for the 7B judge):** keep the repo on Google Drive so outputs survive disconnects.
+
+```python
+from google.colab import drive; drive.mount('/content/drive')
+%cd /content/drive/MyDrive
+!git clone https://github.com/anvitasuresh/xai_proj2
+%cd xai_proj2
+!bash scripts/setup_local.sh gpu
+!bash scripts/run_stage.sh replies
+```
+
+Stage 1-2 GPU work is roughly 3-5 GPU-hours in total. GRPO runs (stage 4) take longer and are better on DCC or a rented GPU than on Colab, whose sessions time out.
 
 ## Stage 2: reward-model audit (after the judge passes the E1 gate)
 
 ```bash
-sbatch slurm/04_audit.sbatch   # pairs -> judge + Skywork-Reward-V2 + ArmoRM scores -> analysis
+bash scripts/run_stage.sh audit   # pairs -> judge + Skywork-Reward-V2 + ArmoRM scores -> analysis
 # -> results/audit/summary.md, gaps.csv, flips.csv, gaps_by_style.csv, forest_all.png
 ```
 

@@ -1,7 +1,6 @@
 #!/bin/bash
-# Generate the tutor reply pool on the audit questions, then select ~1500 replies.
+# GPU stage "replies" on DCC. See scripts/run_stage.sh for what it runs and its env-var options.
 #   sbatch slurm/02_replies.sbatch
-# Optional API model: export OPENAI_API_KEY and add `api` to MODELS below.
 #SBATCH --job-name=tb-replies
 #SBATCH --partition=gpu-common
 #SBATCH --gres=gpu:1
@@ -11,12 +10,5 @@
 #SBATCH --output=logs/%x-%j.out
 set -euo pipefail
 source slurm/env.sh
-activate_env tutorbias-gpu
 nvidia-smi --query-gpu=name,memory.total --format=csv
-
-MODELS="qwen1.5b qwen7b"
-for m in $MODELS; do
-  python -m tutorbias.replies.generate --config configs/replies.yaml --model "$m"
-done
-python -m tutorbias.replies.generate --config configs/replies.yaml --select
-python -m tutorbias.labeling.label_set --config configs/calibration.yaml
+bash scripts/run_stage.sh replies

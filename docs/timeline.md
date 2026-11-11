@@ -4,8 +4,8 @@ The design doc's phases were in weeks; this fits them to 10 days. The bottleneck
 
 | Dates | Work | Gate |
 |---|---|---|
-| Wed Nov 11 | Repo, stage 1 code (done). DCC env setup; build items/messages; submit variant + reply jobs. | |
-| Thu Nov 12 | Reply pool + label set ready. Judge scores the label set. Pilot-label 30 dev items, fix the guide. Line up the second labeler. | |
+| Wed Nov 11 | Repo, stage 1-2 code (done). Build items + variants on a laptop (no GPU needed). Request DCC access. | |
+| Thu Nov 12 | GPU: DCC if sponsored, else Colab Pro or a rented GPU (by Fri at the latest). Reply pool + label set. Judge scores the label set. Pilot-label 30 dev items, fix the guide. Line up the second labeler. | |
 | Fri Nov 13 | Finish 300 labels (second labeler: 100). Calibrate on dev; revise rubric if needed; then test once. | **Gate 1:** judge trustworthy (kappa >= 0.6 on test). If not: rubric v2 by Sat, no audit until it passes. |
 | Sat-Sun Nov 14-15 | Stage 2 audit: judge + 2 RewardBench RMs on every reply x variant. Stage 3: feature ablation, rationale faithfulness, probes. GRPO code + 50-step smoke run. | **Gate 2:** audit result exists. This is already a poster result even if RL fails. |
 | Mon Nov 16 | Launch Tutor A (GRPO, original judge). | Training stable after ~100 steps? If not, fix reward/KL before scaling. |
