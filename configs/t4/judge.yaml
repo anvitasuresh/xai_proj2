@@ -1,0 +1,7 @@
+# Profile for 2x T4 (Kaggle). Same judge model and rubric as configs/judge.yaml, so scores are
+# comparable; only precision (fp16 instead of bf16) and placement change.
+base: ../judge.yaml
+batch_size: 128
+judges:
+  primary:
+    model: {dtype: float16, tensor_parallel_size: 2, gpu_memory_utilization: 0.9, max_model_len: 3072}

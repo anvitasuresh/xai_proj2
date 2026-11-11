@@ -1,0 +1,5 @@
+# Profile for 2x T4 (Kaggle): 8B reward models in fp16, split across both GPUs, smaller batches.
+base: ../audit.yaml
+reward_models:
+  skywork_v2: {dtype: float16, batch_size: 4, max_length: 3072}
+  armorm: {dtype: float16, batch_size: 1, max_length: 3072}

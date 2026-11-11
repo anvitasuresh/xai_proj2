@@ -24,3 +24,21 @@ def test_answer_leaked_digits_and_words():
 def test_same_numbers_ignores_order():
     assert same_numbers("I got 3 then 5", "5 is what I get after 3")
     assert not same_numbers("I got 3", "I got 4")
+
+
+def test_config_profile_inherits_base(tmp_path):
+    from tutorbias.io import load_config
+
+    (tmp_path / "base.yaml").write_text("a: 1\nm: {x: 1, y: 2}\n")
+    (tmp_path / "p").mkdir()
+    (tmp_path / "p" / "c.yaml").write_text("base: ../base.yaml\nm: {y: 3}\n")
+    assert load_config(tmp_path / "p" / "c.yaml") == {"a": 1, "m": {"x": 1, "y": 3}}
+
+
+def test_t4_profiles_keep_models_and_rubric():
+    from tutorbias.io import load_config
+
+    base, t4 = load_config("configs/judge.yaml"), load_config("configs/t4/judge.yaml")
+    assert t4["judges"]["primary"]["model"]["model"] == base["judges"]["primary"]["model"]["model"]
+    assert t4["judges"]["primary"]["rubric"] == base["judges"]["primary"]["rubric"]
+    assert t4["judges"]["primary"]["model"]["dtype"] == "float16"

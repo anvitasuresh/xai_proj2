@@ -12,9 +12,25 @@ import yaml
 
 
 def load_config(path: str | Path) -> dict[str, Any]:
-    """Load a YAML config. Every stage takes one config file so runs are reproducible."""
+    """Load a YAML config. Every stage takes one config file so runs are reproducible.
+
+    A config may start with `base: <path relative to this file>`; it is then deep-merged on top of
+    that base. Hardware profiles (e.g. configs/t4/judge.yaml) use this to change only what differs.
+    """
+    path = Path(path)
     with open(path) as f:
-        return yaml.safe_load(f)
+        cfg = yaml.safe_load(f) or {}
+    base = cfg.pop("base", None)
+    if base:
+        cfg = deep_merge(load_config(path.parent / base), cfg)
+    return cfg
+
+
+def deep_merge(base: dict[str, Any], override: dict[str, Any]) -> dict[str, Any]:
+    out = dict(base)
+    for k, v in override.items():
+        out[k] = deep_merge(out[k], v) if isinstance(v, dict) and isinstance(out.get(k), dict) else v
+    return out
 
 
 def read_jsonl(path: str | Path) -> list[dict[str, Any]]:

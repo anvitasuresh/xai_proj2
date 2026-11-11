@@ -1,0 +1,9 @@
+# Profile for 2x NVIDIA T4 (Kaggle free tier): 16 GB each, no bfloat16.
+#   PROFILE=t4 bash scripts/run_stage.sh replies
+base: ../replies.yaml
+models:
+  qwen1.5b:
+    model: {dtype: float16, gpu_memory_utilization: 0.9}
+  qwen7b:
+    # 7B in fp16 is ~15 GB: split across both T4s.
+    model: {dtype: float16, tensor_parallel_size: 2, gpu_memory_utilization: 0.9, max_model_len: 3072}

@@ -32,7 +32,7 @@ class SequenceClassifierRM:
     (Skywork-Reward, most RewardBench classifiers). ArmoRM uses remote code and returns `.score`."""
 
     def __init__(self, model: str, max_length: int = 4096, batch_size: int = 8, trust_remote_code: bool = False,
-                 score_attr: str | None = None, **_: Any):
+                 score_attr: str | None = None, dtype: str = "bfloat16", **_: Any):
         import torch
         from transformers import AutoModelForSequenceClassification, AutoTokenizer
 
@@ -43,7 +43,10 @@ class SequenceClassifierRM:
             self.tok.pad_token = self.tok.eos_token
         self.tok.padding_side = "right"
         self.model = AutoModelForSequenceClassification.from_pretrained(
-            model, torch_dtype=torch.bfloat16, device_map="cuda" if torch.cuda.is_available() else None,
+            # device_map="auto" splits an 8B model across two small GPUs (e.g. Kaggle's 2x T4) if needed.
+            # T4s have no bfloat16, so the t4 profile sets dtype: float16. We don't quantize: a 4-bit RM
+            # would be a different model from the one we claim to audit.
+            model, torch_dtype=getattr(torch, dtype), device_map="auto" if torch.cuda.is_available() else None,
             trust_remote_code=trust_remote_code, attn_implementation="sdpa",
         ).eval()
         self.max_length = max_length

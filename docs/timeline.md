@@ -5,10 +5,10 @@ The design doc's phases were in weeks; this fits them to 10 days. The bottleneck
 | Dates | Work | Gate |
 |---|---|---|
 | Wed Nov 11 | Repo, stage 1-2 code (done). Build items + variants on a laptop (no GPU needed). Request DCC access. | |
-| Thu Nov 12 | GPU: DCC if sponsored, else Colab Pro or a rented GPU (by Fri at the latest). Reply pool + label set. Judge scores the label set. Pilot-label 30 dev items, fix the guide. Line up the second labeler. | |
+| Thu Nov 12 | GPU: DCC if sponsored, else Kaggle's free 2x T4 (docs/kaggle.md). Reply pool + label set. Judge scores the label set. Pilot-label 30 dev items, fix the guide. Line up the second labeler. | |
 | Fri Nov 13 | Finish 300 labels (second labeler: 100). Calibrate on dev; revise rubric if needed; then test once. | **Gate 1:** judge trustworthy (kappa >= 0.6 on test). If not: rubric v2 by Sat, no audit until it passes. |
 | Sat-Sun Nov 14-15 | Stage 2 audit: judge + 2 RewardBench RMs on every reply x variant. Stage 3: feature ablation, rationale faithfulness, probes. GRPO code + 50-step smoke run. | **Gate 2:** audit result exists. This is already a poster result even if RL fails. |
-| Mon Nov 16 | Launch Tutor A (GRPO, original judge). | Training stable after ~100 steps? If not, fix reward/KL before scaling. |
+| Mon Nov 16 | Launch Tutor A (GRPO, original judge). Needs DCC; if access still isn't there by Fri Nov 13, scale stage 4 down to fit Kaggle (smaller tutor, shorter runs). | Training stable after ~100 steps? If not, fix reward/KL before scaling. |
 | Tue Nov 17 | Pick the debiasing method from stage 2-3; launch Tutor B. Extra seeds if GPUs allow. | **Gate 3:** if Tutor A isn't stable by Tue night, ship core tier with Tutor A only. |
 | Wed-Thu Nov 18-19 | Evaluation E5-E7, reward-hacking review, demo app. | |
 | Fri Nov 20 | Poster draft, README results, figures. | |

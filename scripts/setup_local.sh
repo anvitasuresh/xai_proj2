@@ -5,14 +5,22 @@
 #   bash scripts/setup_local.sh data     # only the dialect env (enough for variants, labeling, calibration)
 #
 # Creates .venv-data (Python 3.10, Multi-VALUE) and .venv-gpu (Python 3.11, vLLM) with uv, which
-# downloads the right Python version itself.
+# downloads the right Python version itself. Set VENV_ROOT to build the envs elsewhere (e.g. /tmp on
+# Kaggle, where the working directory is capped at 20 GB); the repo then gets symlinks to them.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 WHICH="${1:-all}"
+mkvenv() {  # mkvenv <name> <python-version>
+  if [ -n "${VENV_ROOT:-}" ]; then
+    uv venv --python "$2" "$VENV_ROOT/.venv-$1" && ln -sfn "$VENV_ROOT/.venv-$1" ".venv-$1"
+  else
+    uv venv --python "$2" ".venv-$1"
+  fi
+}
 command -v uv >/dev/null || { curl -LsSf https://astral.sh/uv/install.sh | sh; export PATH="$HOME/.local/bin:$PATH"; }
 
 if [ "$WHICH" = "all" ] || [ "$WHICH" = "data" ]; then
-  uv venv --python 3.10 .venv-data
+  mkvenv data 3.10
   uv pip install --python .venv-data/bin/python -e ".[dialect,label,track,dev]"
   # spaCy model as a wheel (spacy download needs pip inside the venv)
   uv pip install --python .venv-data/bin/python \
@@ -27,7 +35,7 @@ PY
 fi
 
 if [ "$WHICH" = "all" ] || [ "$WHICH" = "gpu" ]; then
-  uv venv --python 3.11 .venv-gpu
+  mkvenv gpu 3.11
   uv pip install --python .venv-gpu/bin/python -e ".[gpu,api,track,dev]"
 fi
 echo "Done. Next: bash scripts/run_stage.sh --help"

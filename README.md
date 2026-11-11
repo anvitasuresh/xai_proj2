@@ -74,18 +74,9 @@ All GPU steps are resumable: if a session dies, rerun the same command and it co
 
 **On Duke DCC:** run `bash slurm/setup_env.sh` once on a login node, then `sbatch slurm/01_data.sbatch` (after `items`), `02_replies`, `03_judge`, `04_audit`. Each job just calls `scripts/run_stage.sh`.
 
-**On Colab (Pro, A100 or L4 runtime; a T4 is too small for the 7B judge):** keep the repo on Google Drive so outputs survive disconnects.
+**Free GPUs (Kaggle, 2x T4):** `PROFILE=t4 bash scripts/run_stage.sh <stage>` runs the same models and rubric in float16, split across both GPUs. Step-by-step notebook setup: [docs/kaggle.md](docs/kaggle.md).
 
-```python
-from google.colab import drive; drive.mount('/content/drive')
-%cd /content/drive/MyDrive
-!git clone https://github.com/anvitasuresh/xai_proj2
-%cd xai_proj2
-!bash scripts/setup_local.sh gpu
-!bash scripts/run_stage.sh replies
-```
-
-Stage 1-2 GPU work is roughly 3-5 GPU-hours in total. GRPO runs (stage 4) take longer and are better on DCC or a rented GPU than on Colab, whose sessions time out.
+Stage 1-2 GPU work is roughly 3-5 A100-hours or 4-6 T4-hours. GRPO runs (stage 4) take longer and are planned for DCC.
 
 ## Stage 2: reward-model audit (after the judge passes the E1 gate)
 
