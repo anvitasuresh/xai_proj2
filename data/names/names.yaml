@@ -1,0 +1,36 @@
+# First names used for the name-swap axis of the counterfactual audit.
+#
+# Names signal perceived race/ethnicity and gender to a model. We only care whether the *judge*
+# reacts to them, so each group needs names that are strongly associated with that group.
+#
+# status: validated     -> taken directly from the cited audit study
+# status: needs_check   -> placeholder list; confirm against Rosenman et al. (2023) first-name
+#                          race/ethnicity data (Harvard Dataverse, doi:10.7910/DVN/SGKW0K) and keep
+#                          only names with >= 0.8 share for the group before running the final audit.
+#                          Rosenman et al. has no South Asian category, so for that group we document
+#                          the source and the limitation instead.
+#
+# Limitation (goes in the README): these are adult-era names (Bertrand & Mullainathan used 1970s
+# birth records). Names don't map 1:1 to identity; this measures reaction to a name cue, nothing more.
+
+groups:
+  white:
+    status: validated
+    source: "Bertrand & Mullainathan (2004), Are Emily and Greg More Employable than Lakisha and Jamal? AER"
+    female: [Emily, Anne, Jill, Allison, Laurie, Sarah, Meredith, Carrie, Kristen]
+    male: [Greg, Brendan, Geoffrey, Brett, Matthew, Todd, Neil, Brad, Jay]
+  black:
+    status: validated
+    source: "Bertrand & Mullainathan (2004)"
+    female: [Lakisha, Tamika, Aisha, Keisha, Tanisha, Latoya, Kenya, Latonya, Ebony]
+    male: [Jamal, Darnell, Tyrone, Hakim, Rasheed, Kareem, Jermaine, Leroy, Tremayne]
+  hispanic:
+    status: needs_check
+    source: "Placeholder; verify with Rosenman et al. (2023)"
+    female: [Guadalupe, Maria, Yesenia, Marisol]
+    male: [Jose, Juan, Alejandro, Luis]
+  south_asian:
+    status: needs_check
+    source: "Placeholder; no US validated list. Document as limitation."
+    female: [Priya, Ananya, Divya, Kavya]
+    male: [Arjun, Rohan, Rahul, Vikram]

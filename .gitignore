@@ -1,0 +1,15 @@
+__pycache__/
+*.pyc
+*.egg-info/
+.venv*/
+.pytest_cache/
+.ruff_cache/
+wandb/
+logs/*
+!logs/.gitkeep
+# Large or regenerable data. Small, reviewed files (names, labels) are committed.
+data/raw/
+data/processed/
+results/**/*.jsonl
+!results/.gitkeep
+.env

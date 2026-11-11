@@ -1,0 +1,27 @@
+# Fixed tutor-reply pool for calibration and the audit (written against the SAE audit messages).
+seed: 13
+paths:
+  items: data/processed/items_audit.jsonl
+  messages: data/processed/messages_audit.jsonl
+  out_dir: data/processed/replies
+
+wandb: {enabled: true, project: who-does-the-tutor-learn-from}
+
+styles: [direct_answer, worked_solution, hint_with_leak, partial_work, targeted_hint, socratic, vague, misleading]
+
+generation: {max_tokens: 300, temperature: 0.7, top_p: 0.95}
+
+models:
+  qwen1.5b:
+    model: {backend: vllm, model: Qwen/Qwen2.5-1.5B-Instruct, max_model_len: 4096}
+  qwen7b:
+    model: {backend: vllm, model: Qwen/Qwen2.5-7B-Instruct, max_model_len: 4096}
+  # Optional API model (design doc: "two API models"). Needs OPENAI_API_KEY (or any OpenAI-compatible
+  # endpoint via base_url). Skip it if there's no budget: the two local models already span the range.
+  api:
+    model: {backend: openai, model: gpt-4o-mini}
+
+selection:
+  per_item: 5        # 300 questions x 5 = 1500 replies
+  min_words: 3
+  max_words: 250

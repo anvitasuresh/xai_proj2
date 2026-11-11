@@ -1,0 +1,50 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "tutorbias"
+version = "0.1.0"
+description = "Who Does the Tutor Learn From? Auditing reward-model dialect bias and how it propagates into an RL-trained tutor."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+dependencies = [
+  "numpy>=1.24",
+  "pandas>=2.0",
+  "pyyaml>=6.0",
+  "scikit-learn>=1.3",
+  "scipy>=1.10",
+  "matplotlib>=3.7",
+  "tqdm>=4.65",
+  "requests>=2.31",
+]
+
+[project.optional-dependencies]
+# GPU env on DCC: fast batched generation and judge scoring.
+gpu = ["vllm>=0.6.3", "torch>=2.4", "transformers>=4.45", "datasets>=2.20"]
+# Small CPU fallback for the judge (tests, debugging with tiny models).
+hf = ["torch>=2.4", "transformers>=4.45"]
+# Dialect env: Multi-VALUE pins spacy/nltk/stanza, so it lives in its own env (see docs/design_decisions.md).
+dialect = ["value-nlp==0.3"]
+api = ["openai>=1.40"]
+label = ["streamlit>=1.36"]
+track = ["wandb>=0.17"]
+dev = ["pytest>=8", "ruff>=0.5"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+tutorbias = ["judge/prompts/*.txt"]
+
+[tool.ruff]
+line-length = 110
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
+ignore = ["E501", "B905"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
