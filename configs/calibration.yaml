@@ -1,0 +1,25 @@
+# Labeling and judge calibration (E1).
+seed: 13
+paths:
+  reply_pool: data/processed/replies/reply_pool.jsonl
+  items: data/processed/items_audit.jsonl
+  messages: data/processed/messages_audit.jsonl
+  labels_dir: data/labels
+  judge_scores: results/judge/label_set_scores.jsonl
+  results_dir: results/calibration
+
+wandb: {enabled: true, project: who-does-the-tutor-learn-from}
+
+label_set:
+  seed: 13
+  n_labels: 300
+  n_double: 100      # second labeler
+  dev_frac: 0.5      # iterate on the rubric with dev only; report test once
+
+calibration:
+  primary_labeler: anvita
+  second_labeler: second
+  n_boot: 2000
+  # Pre-registered go/no-go (design doc gate 1). Kappa 0.6 = "substantial" (Landis & Koch). If the
+  # judge misses this on dev, revise the rubric (new version file) and re-score; don't move the bar.
+  gate: {min_scaffolding_kappa: 0.6, min_helpfulness_spearman: 0.5}

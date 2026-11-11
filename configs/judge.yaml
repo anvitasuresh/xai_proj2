@@ -1,0 +1,23 @@
+# Scaffolding judge. `primary` is the judge used for the reward and audited in stage 2.
+seed: 13
+id_field: label_id     # override with --id-field pair_id for audit pairs
+batch_size: 256
+min_valid_mass: 0.9    # warn if <90% of next-token probability lands on valid labels
+
+wandb: {enabled: true, project: who-does-the-tutor-learn-from}
+
+judges:
+  primary:
+    rubric: v1
+    mode: logprob
+    model: {backend: vllm, model: Qwen/Qwen2.5-7B-Instruct, max_model_len: 4096, gpu_memory_utilization: 0.85}
+  # Sanity-check judge (design doc): is the 7B judge's behaviour an artifact of a small model?
+  api:
+    rubric: v1
+    mode: generate
+    model: {backend: openai, model: gpt-4o-mini}
+  # CPU smoke test with a tiny model. Scores are meaningless; it only checks the plumbing.
+  cpu_smoke:
+    rubric: v1
+    mode: logprob
+    model: {backend: hf, model: Qwen/Qwen2.5-0.5B-Instruct, batch_size: 2}

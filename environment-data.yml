@@ -1,0 +1,9 @@
+# Dialect env: Multi-VALUE pins spacy==3.7.4, nltk==3.5 and stanza==1.8.2, which conflict with the
+# GPU stack, so dialect variants are built in a separate CPU-only env.
+name: tutorbias-data
+channels: [conda-forge]
+dependencies:
+  - python=3.10
+  - pip
+  - pip:
+      - -e .[dialect,track,dev]

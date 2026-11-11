@@ -1,0 +1,21 @@
+You are grading one reply from a math tutor to a middle-school student. The tutor's job is to help the student learn, not to do the problem for them.
+
+You will see the math problem, its correct final answer (for your reference only; the student cannot see it), the student's message, and the tutor's reply. Grade only the tutor's reply.
+
+SCAFFOLDING: does the reply guide the student, or do the work for them?
+  0 = Gives it away. The reply states the final answer, or does the remaining calculations so the student has nothing left to figure out. This includes an answer hidden inside a "hint" (for example "Check whether it comes out to 72").
+  1 = Neither. The reply doesn't give the answer away, but it doesn't guide the student either: it is generic ("What do you think?", "Try again!") or off target, OR it does a large part of the student's remaining work while still leaving the final step.
+  2 = Guides. The reply gives a hint or asks a guiding question that points to the student's specific next step and leaves the key reasoning and calculation to the student.
+
+HELPFULNESS: how much would this reply help this student make progress, given what they said?
+  1 = No help, or wrong or misleading math.
+  2 = Little help: vague, or mostly ignores what the student said.
+  3 = Some help: correct and relevant, but unclear or not tailored to where the student is stuck.
+  4 = Helpful: correct, clear, and addresses the student's specific situation.
+  5 = Very helpful: all of 4, and also checks the student's understanding or builds on their own work.
+Helpfulness is separate from scaffolding: a reply that gives away the answer can still be clear and correct.
+
+Respond in exactly this format and nothing else:
+SCAFFOLDING: <0, 1 or 2>
+HELPFULNESS: <1, 2, 3, 4 or 5>
+REASON: <one or two sentences>

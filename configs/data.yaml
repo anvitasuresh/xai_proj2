@@ -1,0 +1,35 @@
+# Stage 1 data: items, stuck messages, counterfactual variants.
+seed: 13
+paths:
+  raw: data/raw
+  processed: data/processed
+
+wandb: {enabled: true, project: who-does-the-tutor-learn-from}
+
+items:
+  seed: 13
+  n_rl_train: 2000   # GRPO training prompts (GSM8K train)
+  n_audit: 300       # judge calibration + reward-model audit (GSM8K train, disjoint from rl_train)
+  n_test: 300        # held-out tutor evaluation, E5-E7 (GSM8K test)
+  min_steps: 2       # need >= 2 steps for the "I did step 1 and got X" message
+  max_steps: 6       # roughly middle-school difficulty
+
+variants:
+  # Counterfactual student groups. Only the student's message changes; question and reply stay fixed.
+  dialect_groups:
+    sae: {kind: identity}
+    aae: {kind: multivalue, dialect: AfricanAmericanVernacular}   # eWAVE "Urban African American Vernacular English"
+    indian: {kind: multivalue, dialect: IndianDialect}            # eWAVE "Indian English"
+    # ESL: Multi-VALUE has no learner-English variety, so we use features widely documented in
+    # second-language English (article omission, plural/3sg -s omission, auxiliary drop, bare past).
+    # Several overlap with AAE features: see docs/design_decisions.md (this is a stated limitation).
+    esl:
+      kind: multivalue_features
+      features: [remove_det_definite, remove_det_indefinite, zero_plural, uninflect, drop_aux_yn, bare_past_tense]
+  paraphrase_control: true   # SAE rewording, no dialect features (E2 control)
+  max_attempts: 3            # re-seed if a probabilistic transform changed nothing
+  names:
+    file: data/names/names.yaml
+    per_gender: 2            # 2 female + 2 male names per group
+    splits: [audit, test]    # names are only needed where we audit/evaluate
+  hand_check_per_group: 40   # rows per group in variant_hand_check.csv
