@@ -1,0 +1,36 @@
+# Stage 2: counterfactual reward-model audit (E2).
+seed: 13
+paths:
+  items: data/processed/items_audit.jsonl
+  variants: data/processed/variants.jsonl
+  reply_pool: data/processed/replies/reply_pool.jsonl
+  pairs: data/processed/audit_pairs.jsonl
+  scores_dir: results/audit/scores        # one jsonl per scorer
+  results_dir: results/audit
+
+wandb: {enabled: true, project: who-does-the-tutor-learn-from}
+flush_every: 512
+
+# Off-the-shelf RMs from RewardBench (audited only). Check the leaderboard for current top 8B models;
+# swap names here. batch_size 1 for any model that fails the batching check.
+reward_models:
+  skywork_v2:
+    model: Skywork/Skywork-Reward-V2-Llama-3.1-8B
+    batch_size: 8
+  armorm:
+    model: RLHFlow/ArmoRM-Llama3-8B-v0.1
+    trust_remote_code: true
+    score_attr: score
+    batch_size: 1
+
+analysis:
+  baseline_group: sae
+  name_baseline_group: name_white
+  n_boot: 2000
+  alpha: 0.05
+  # Which column is the "score" for each scorer. The judge gives two; both are analyzed.
+  scorers:
+    judge_scaffolding: {file: judge.jsonl, column: scaffolding}
+    judge_helpfulness: {file: judge.jsonl, column: helpfulness}
+    skywork_v2: {file: skywork_v2.jsonl, column: reward}
+    armorm: {file: armorm.jsonl, column: reward}
