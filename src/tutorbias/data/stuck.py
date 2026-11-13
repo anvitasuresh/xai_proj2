@@ -1,13 +1,13 @@
 """Templated "stuck student" messages.
 
 Each question gets one message. There are four message types, each with several phrasings in
-Standard American English (SAE). One phrasing (picked per item) is the base message every dialect
+Mainstream American English (MAE). One phrasing (picked per item) is the base message every dialect
 variant is built from; a different phrasing of the same type is the *paraphrase control* for E2: it rewords the message
 without any dialect feature, so we can tell "the judge reacts to dialect" apart from
 "the judge reacts to any rewording".
 
 Templates are written to contain the structures Multi-VALUE transforms act on (negation, copulas,
-past tense, articles, pronouns, auxiliaries), so most dialect variants actually differ from SAE.
+past tense, articles, pronouns, auxiliaries), so most dialect variants actually differ from MAE.
 Numbers in a message come only from the question's own worked solution, and a message never
 contains the correct final answer (checked below).
 """
@@ -93,7 +93,7 @@ def _slots(item: dict[str, Any]) -> dict[str, dict[str, str] | None]:
 def build_messages(items: list[dict[str, Any]], seed: int) -> tuple[list[dict[str, Any]], dict[str, int]]:
     """One stuck message per item, message types balanced as far as each item allows.
 
-    Returns (messages, counts per type). Each message has `text` (phrasing 0, the SAE base)
+    Returns (messages, counts per type). Each message has `text` (phrasing 0, the MAE base)
     and `paraphrase_text` (another phrasing of the same type, the E2 control).
     """
     rng = random.Random(seed)

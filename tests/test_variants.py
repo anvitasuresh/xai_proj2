@@ -32,8 +32,9 @@ def _setup(tmp_path, monkeypatch, mode="ok"):
     cfg = {
         "seed": 1, "paths": {"processed": str(tmp_path)}, "wandb": {"enabled": False},
         "variants": {
-            "dialect_groups": {"sae": {"kind": "identity"}, "fake": {"kind": "fake", "mode": mode}},
+            "dialect_groups": {"mae": {"kind": "identity"}, "fake": {"kind": "fake", "mode": mode}},
             "paraphrase_control": True, "max_attempts": 2, "hand_check_per_group": 5,
+            "validation_dir": str(tmp_path / "validation"),
             "names": {"file": str(names), "per_gender": 1, "splits": ["audit"]},
         },
     }
@@ -49,7 +50,7 @@ def test_variants_end_to_end(tmp_path, monkeypatch):
     build.cmd_merge(cfg)
     rows = read_jsonl(tmp_path / "variants.jsonl")
     groups = {r["group"] for r in rows}
-    assert groups == {"sae", "fake", "paraphrase", "name_g1"}
+    assert groups == {"mae", "fake", "paraphrase", "name_g1"}
     fake = next(r for r in rows if r["group"] == "fake")
     assert fake["changed"] and fake["numbers_ok"] and fake["features"] == {"negative_concord": 1}
     names = [r for r in rows if r["axis"] == "name"]
@@ -58,7 +59,8 @@ def test_variants_end_to_end(tmp_path, monkeypatch):
     stats = json.loads((tmp_path / "variants_stats.json").read_text())
     assert stats["by_group"]["fake"]["changed_rate"] == 1.0
     build.cmd_check_sample(cfg)
-    assert (tmp_path / "variant_hand_check.csv").exists()
+    assert (tmp_path / "validation" / "rating_sheet_fake.csv").exists()
+    assert (tmp_path / "validation" / "rating_key.jsonl").exists()
 
 
 def test_variants_flag_number_changes(tmp_path, monkeypatch):

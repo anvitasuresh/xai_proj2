@@ -1,4 +1,4 @@
-"""Name-swap axis: the same SAE message, introduced by students with different names."""
+"""Name-swap axis: the same MAE message, introduced by students with different names."""
 
 from __future__ import annotations
 

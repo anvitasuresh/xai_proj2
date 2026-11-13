@@ -88,7 +88,7 @@ def calibrate(key: list[dict], labels: dict, labels2: dict, scores: dict, split:
 
 
 def per_group_agreement(key: list[dict], labels: dict, variant_scores: list[dict], n_boot: int, seed: int) -> dict:
-    """Judge-human kappa per counterfactual group, using the SAE human label as truth for every variant
+    """Judge-human kappa per counterfactual group, using the MAE human label as truth for every variant
     of the same reply. If the judge is fair, agreement should be the same in every group."""
     reply_to_label = {k["reply_id"]: labels[k["label_id"]] for k in key if k["label_id"] in labels}
     groups: dict[str, tuple[list, list]] = {}

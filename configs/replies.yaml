@@ -1,4 +1,4 @@
-# Fixed tutor-reply pool for calibration and the audit (written against the SAE audit messages).
+# Fixed tutor-reply pool for calibration and the audit (written against the MAE audit messages).
 seed: 13
 paths:
   items: data/processed/items_audit.jsonl

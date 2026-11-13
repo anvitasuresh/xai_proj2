@@ -17,19 +17,51 @@ items:
 variants:
   # Counterfactual student groups. Only the student's message changes; question and reply stay fixed.
   dialect_groups:
-    sae: {kind: identity}
-    aae: {kind: multivalue, dialect: AfricanAmericanVernacular}   # eWAVE "Urban African American Vernacular English"
-    indian: {kind: multivalue, dialect: IndianDialect}            # eWAVE "Indian English"
-    # ESL: Multi-VALUE has no learner-English variety, so we use features widely documented in
-    # second-language English (article omission, plural/3sg -s omission, auxiliary drop, bare past).
-    # Several overlap with AAE features: see docs/design_decisions.md (this is a stated limitation).
-    esl:
+    # Every non-MAE group is built from documented grammatical features only. Safeguards against
+    # caricature (details and sources in docs/ethics.md):
+    #   min_attestation: 1.0  -> only features eWAVE rates "A" (pervasive or obligatory) for the variety
+    #   exclude               -> features removed for a stated reason (comment next to each)
+    #   feature_prob: 0.5     -> each allowed feature is used in a given message with p = 0.5, so messages
+    #                            don't stack every feature at once
+    # After native-speaker validation (docs/dialect_validation.md), features flagged as unnatural or
+    # stereotyped are added to `exclude` and the variants are rebuilt.
+    mae: {kind: identity}   # Mainstream American English (the reference)
+    aae:
+      kind: multivalue
+      dialect: AfricanAmericanVernacular   # eWAVE "Urban African American Vernacular English"
+      min_attestation: 1.0
+      feature_prob: 0.5
+      exclude:
+        - yall          # "you" in our messages addresses one tutor; plural y'all would be ungrammatical here
+        - fixin_future  # Southern US form that Multi-VALUE maps to the same eWAVE feature (126) as "finna"
+    indian:
+      kind: multivalue
+      dialect: IndianDialect               # eWAVE "Indian English"
+      min_attestation: 1.0
+      feature_prob: 0.5
+      exclude: []
+    # L2 English (English learners): not a dialect or an ethnic group, and Multi-VALUE has no learner
+    # variety. We use the grammatical morphemes that second-language learners acquire late and most often
+    # omit, across many first languages (Dulay & Burt 1974; Goldschneider & DeKeyser 2001): articles,
+    # plural -s, third-person -s, past -ed, and auxiliaries in questions. Several also occur in AAE, so
+    # the two groups overlap; stage 3 compares features, not just groups.
+    l2:
       kind: multivalue_features
       features: [remove_det_definite, remove_det_indefinite, zero_plural, uninflect, drop_aux_yn, bare_past_tense]
-  paraphrase_control: true   # SAE rewording, no dialect features (E2 control)
+      feature_prob: 0.5
+  paraphrase_control: true   # MAE rewording, no dialect features (E2 control)
   max_attempts: 3            # re-seed if a probabilistic transform changed nothing
   names:
     file: data/names/names.yaml
     per_gender: 2            # 2 female + 2 male names per group
     splits: [audit, test]    # names are only needed where we audit/evaluate
-  hand_check_per_group: 40   # rows per group in variant_hand_check.csv
+  hand_check_per_group: 40   # rows per group in the native-speaker rating sheet (docs/dialect_validation.md)
+  validation_dir: data/validation
+
+# Native-speaker validation of the dialect variants (docs/dialect_validation.md). Pre-registered rule:
+validation:
+  min_n: 5                    # judge a feature only once it appears in >= 5 rated rows
+  max_stereotyped_rate: 0.2   # drop if >= 20% of ratings call rows with it stereotyped/exaggerated
+  min_naturalness: 3.0        # ... or if its mean naturalness is below 3 / 5
+  margin_stereotyped: 0.1     # ... and it is worse than rows without the feature by this much
+  margin_naturalness: 0.5

@@ -4,6 +4,7 @@
 #
 #   bash scripts/run_stage.sh items       CPU   GSM8K items + stuck messages           (seconds)
 #   bash scripts/run_stage.sh variants    CPU   Multi-VALUE dialect + name variants    (~1-3 h; laptop is fine)
+#   bash scripts/run_stage.sh validate    CPU   analyze native-speaker ratings of the variants
 #   bash scripts/run_stage.sh replies     GPU   tutor reply pool + blinded label set   (~1 h on one 24 GB+ GPU)
 #   bash scripts/run_stage.sh judge       GPU   judge scores + rationales on label set (~10 min)
 #   bash scripts/run_stage.sh audit       GPU   E2 audit: pairs, judge + 2 RMs, analysis (~2-3 h)
@@ -59,6 +60,10 @@ case "$STAGE" in
       $P -m tutorbias.data.build check-sample --config "$DATA_CFG"
     fi
     ;;
+  validate)
+    # After native speakers fill in data/validation/ratings_<group>_<rater>.csv (docs/dialect_validation.md)
+    $(py data) -m tutorbias.data.validate_variants --config "$DATA_CFG"
+    ;;
   replies)
     P=$(py gpu)
     for m in ${MODELS:-qwen1.5b qwen7b}; do
@@ -88,6 +93,6 @@ case "$STAGE" in
     $P -m tutorbias.audit.analyze --config "$(cfg audit)"
     ;;
   *)
-    sed -n '2,17p' "$0"
+    sed -n "2,18p" "$0"
     ;;
 esac

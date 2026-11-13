@@ -15,7 +15,7 @@ Design choices:
     to the labels and E1 overstates agreement.
   * A double-label subset (~100, spread over dev and test) for the second labeler: human-human
     agreement is the ceiling E1 is compared against.
-  * Labels are given on the SAE message. Assumption (stated in the README): the correct label for a
+  * Labels are given on the MAE message. Assumption (stated in the README): the correct label for a
     reply doesn't depend on the student's dialect, so the same label is the ground truth for every
     counterfactual variant. That lets us measure judge-human agreement *per dialect group* with no
     extra labeling.

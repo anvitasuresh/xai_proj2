@@ -17,8 +17,8 @@ We audit the judge as a practitioner would naturally write it. Debiased variants
 ### Labels split into dev and test
 Iterating on a rubric while measuring agreement on the same labels overfits the rubric to those labels. We iterate on dev (50%) and report test once. The gate (kappa >= 0.6, Spearman >= 0.5) is in the config before any labels exist.
 
-### Per-group agreement reuses the SAE labels
-Labels are given on the SAE message. We assume the correct label for a reply doesn't depend on the student's dialect or name (that is the counterfactual-fairness definition the project uses). Under that assumption, the same label is ground truth for every variant, so judge-human agreement can be computed per group with no extra labeling. If someone argues a reply *should* be judged differently for a different student, this assumption is where to push.
+### Per-group agreement reuses the MAE labels
+Labels are given on the MAE message. We assume the correct label for a reply doesn't depend on the student's dialect or name (that is the counterfactual-fairness definition the project uses). Under that assumption, the same label is ground truth for every variant, so judge-human agreement can be computed per group with no extra labeling. If someone argues a reply *should* be judged differently for a different student, this assumption is where to push.
 
 ### Three disjoint item splits
 `rl_train` (2000, GSM8K train), `audit` (300, GSM8K train, disjoint), `test` (300, GSM8K test). The judge is calibrated and audited on questions the tutor never trains on, and tutor evaluation uses GSM8K's own test split.
@@ -27,16 +27,19 @@ Labels are given on the SAE message. We assume the correct label for a reply doe
 Integer non-negative answers, 2-6 solution steps, and the answer must not already appear in the question (otherwise answer-leak can't be measured). Counts of dropped items are in `data/processed/items_stats.json`.
 
 ### Stuck messages: 4 types x 3 phrasings, base phrasing varies by item
-Types: tried a partial step, wrong answer (the second-to-last step's result, i.e. "forgot the last step"), "I don't get it", and "just tell me the answer". A message never contains the correct answer, and a message type is skipped for an item if any of its numbers equals the answer. The paraphrase control is a different SAE phrasing of the same type.
+Types: tried a partial step, wrong answer (the second-to-last step's result, i.e. "forgot the last step"), "I don't get it", and "just tell me the answer". A message never contains the correct answer, and a message type is skipped for an item if any of its numbers equals the answer. The paraphrase control is a different MAE phrasing of the same type.
 
 ### Rule-based dialects via Multi-VALUE, in a separate environment
-LLM rewrites "in AAVE" tend to produce caricature; Multi-VALUE applies documented eWAVE features and records which ones fired, which stage 3 needs for feature ablation. Multi-VALUE pins spaCy 3.7.4 / nltk 3.5 / stanza 1.8.2, so it lives in `.venv-data` (Python 3.10), separate from the GPU env. Variants that change any number are flagged (`numbers_ok`) and excluded from the audit; variants that change nothing are recorded (`changed`), and the audit reports results with and without them.
+LLM rewrites "in AAE" tend to produce caricature; Multi-VALUE applies documented eWAVE features and records which ones fired, which stage 3 needs for feature ablation. Multi-VALUE pins spaCy 3.7.4 / nltk 3.5 / stanza 1.8.2, so it lives in `.venv-data` (Python 3.10), separate from the GPU env. Variants that change any number are flagged (`numbers_ok`) and excluded from the audit; variants that change nothing are recorded (`changed`), and the audit reports results with and without them.
 
-### ESL is a feature list, not a variety
-Multi-VALUE has no learner-English variety. We use features documented in second-language English (article omission, plural and 3sg -s omission, auxiliary drop in questions, bare past). Several overlap with AAE features (e.g. 3sg -s absence), so the ESL and AAE groups are not independent. Stage 3 ablation by feature handles this better than group-level comparisons.
+### Dialect features are restricted, blocklisted, and validated
+Only eWAVE features rated A (pervasive or obligatory) for each variety are used; a blocklist removes features that are wrong in context; each feature is used with probability 0.5 per message; Multi-VALUE's untracked slang substitutions are disabled; and native speakers rate a sample before results are reported. Full reasoning: [ethics.md](ethics.md). Feature lists: [dialect_features.md](dialect_features.md).
+
+### Learner (L2) English is a feature list, not a variety
+Multi-VALUE has no learner-English variety. We use the grammatical morphemes L2 learners acquire late and often omit across first languages (Dulay & Burt 1974; Goldschneider & DeKeyser 2001): articles, plural -s, third-person -s, past -ed, auxiliaries in questions. Several overlap with AAE features (e.g. 3sg -s absence), so the L2 and AAE groups are not independent. Stage 3 compares features rather than only groups.
 
 ### Names
-Black/white names are from Bertrand & Mullainathan (2004). Hispanic and South Asian lists are placeholders marked `needs_check` in `data/names/names.yaml` and should be verified (Rosenman et al. 2023 for Hispanic) before the final audit. The name appears as "Hi, I'm {name}." before the SAE message.
+Black/white names are from Bertrand & Mullainathan (2004). Hispanic and South Asian lists are placeholders marked `needs_check` in `data/names/names.yaml` and should be verified (Rosenman et al. 2023 for Hispanic) before the final audit. The name appears as "Hi, I'm {name}." before the MAE message.
 
 ### Math only, no reading-comprehension items (for now)
 The design doc mentions short reading items. They have no numeric answer, so answer-leak detection and the step-based stuck messages don't apply, and the scaffolding rubric gets fuzzier. We keep the core tier to GSM8K and add reading items only if time allows.

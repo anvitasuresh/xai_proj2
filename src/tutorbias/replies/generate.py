@@ -5,7 +5,7 @@ pure hint, so we prompt models with explicit style instructions. The *intended* 
 sampling device: models (especially 1.5B) don't always follow it, which is why replies are labeled
 by a human and scored by the judge rather than trusting the style tag.
 
-Replies are written to the SAE base message. In the audit the *same* reply is then paired with every
+Replies are written to the MAE base message. In the audit the *same* reply is then paired with every
 counterfactual version of the student's message, so any score difference comes from the student text.
 
   python -m tutorbias.replies.generate --config configs/replies.yaml --model qwen1.5b

@@ -72,9 +72,9 @@ def test_calibrate_end_to_end(tmp_path):
     assert rep["human_vs_human"]["scaffolding_kappa"] == pytest.approx(1.0)
 
     variants = [{"reply_id": f"r{i}", "group": g, "scaffolding_label": labels[f"L{i:04d}"][0]}
-                for i in range(200) for g in ("sae", "aae")]
+                for i in range(200) for g in ("mae", "aae")]
     pg = per_group_agreement(key, la, variants, n_boot=100, seed=0)
-    assert set(pg) == {"sae", "aae"} and pg["aae"]["kappa"] == pytest.approx(1.0)
+    assert set(pg) == {"mae", "aae"} and pg["aae"]["kappa"] == pytest.approx(1.0)
 
 
 def test_load_labels_skips_blank_and_keeps_latest(tmp_path):

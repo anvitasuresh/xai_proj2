@@ -2,7 +2,7 @@
 
 **Auditing reward-model dialect bias, and whether it carries into an RL-trained AI tutor.**
 
-An AI tutor trained with reinforcement learning learns whatever its reward model rewards. If the reward model scores the *same* tutoring help differently depending on whether the student writes in Standard American English, African American English, Indian English, or learner English, or on the student's name, the tutor can learn to give some students real guidance and hand others the answer. Bastani et al. (PNAS, 2025) found that answer-giving help improves practice scores but hurts learning, so that gap would fall on exactly the students AI-in-schools policies aim to protect.
+An AI tutor trained with reinforcement learning learns whatever its reward model rewards. If the reward model scores the *same* tutoring help differently depending on whether the student writes in Mainstream American English, African American English, Indian English, or learner English, or on the student's name, the tutor can learn to give some students real guidance and hand others the answer. Bastani et al. (PNAS, 2025) found that answer-giving help improves practice scores but hurts learning, so that gap would fall on exactly the students AI-in-schools policies aim to protect.
 
 This repo builds the whole pipeline:
 
@@ -85,7 +85,7 @@ bash scripts/run_stage.sh audit   # pairs -> judge + Skywork-Reward-V2 + ArmoRM 
 # -> results/audit/summary.md, gaps.csv, flips.csv, gaps_by_style.csv, forest_all.png
 ```
 
-Every reply in the pool is paired with every version of its student's message (~1500 replies x ~21 versions). Within a reply, only the student text changes, so a score gap is bias by construction. The analysis reports paired gaps in SD units with bootstrap CIs that resample *questions* (replies to one question share a message), Holm-corrected p-values, the gap net of the SAE paraphrase control, preference flip rates between replies, the judge's discrete label change rate, and gaps broken down by reply style. Everything is repeated on variants that actually differ from SAE (`changed_only`).
+Every reply in the pool is paired with every version of its student's message (~1500 replies x ~21 versions). Within a reply, only the student text changes, so a score gap is bias by construction. The analysis reports paired gaps in SD units with bootstrap CIs that resample *questions* (replies to one question share a message), Holm-corrected p-values, the gap net of the MAE paraphrase control, preference flip rates between replies, the judge's discrete label change rate, and gaps broken down by reply style. Everything is repeated on variants that actually differ from MAE (`changed_only`).
 
 ## How the judge scores a reply
 
@@ -96,7 +96,7 @@ The judge sees the problem, its correct answer, the student's message, and the t
 | # | Question | Metric | Control | Status |
 |---|---|---|---|---|
 | E1 | Is the judge trustworthy? | Cohen's kappa (scaffolding), Spearman (helpfulness), bootstrap CIs, per-group agreement | Human-human agreement on ~100 items | code ready |
-| E2 | Are reward models biased by dialect or name? | Paired gap vs SAE (SD units) with clustered bootstrap CIs, Holm; preference flip rate; gap by reply style | SAE paraphrase (rewording, no dialect) | code ready |
+| E2 | Are reward models biased by dialect or name? | Paired gap vs MAE (SD units) with clustered bootstrap CIs, Holm; preference flip rate; gap by reply style | MAE paraphrase (rewording, no dialect) | code ready |
 | E3 | What drives the gaps? | Score change per ablated feature; probe accuracy by layer | Random-feature ablation; shuffled-label probe | planned |
 | E4 | Are the judge's explanations faithful? | Share of real drivers the rationale mentions | Cases with no score gap | planned |
 | E5 | Did RL teach scaffolding? | Scaffolding rate, helpfulness, answer-leak rate | Base model | planned |
@@ -105,7 +105,7 @@ The judge sees the problem, its correct answer, the student's message, and the t
 
 ## Limitations
 
-- **Synthetic dialects.** Rule-based transforms are cleaner than real speech. Gaps show sensitivity to dialect *features*, not real-world effect sizes. ESL is a feature list that overlaps with AAE.
+- **Synthetic dialects.** Rule-based transforms are cleaner than real speech. Gaps show sensitivity to dialect *features*, not real-world effect sizes, and a dialect is not a race or nationality. Variants use only eWAVE features rated pervasive for each variety and are checked by native speakers; see [docs/ethics.md](docs/ethics.md). Learner (L2) English is a feature list that overlaps with AAE.
 - **Small models.** 1.5B tutor, 7B judge: a mechanism demonstration, not a claim about deployed tutors.
 - **My labels set the standard.** "Good scaffolding" reflects one rubric; second-labeler agreement shows how subjective it is.
 - **Single-turn, math only.**

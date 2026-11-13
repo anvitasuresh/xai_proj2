@@ -105,16 +105,16 @@ def cmd_variants(cfg: dict[str, Any], shard: int, num_shards: int) -> None:
                     err = None
                 except Exception as e:  # Multi-VALUE can assert on odd tokenization; record and move on
                     text, feats, err = msg["text"], {}, f"{type(e).__name__}: {e}"[:200]
-                if group == "sae" or (text != msg["text"] and same_numbers(text, msg["text"])):
+                if group == "mae" or (text != msg["text"] and same_numbers(text, msg["text"])):
                     break
             errors += err is not None
             rows.append(_variant(msg, group, "dialect", text, feats, attempts=attempts, transform_error=err))
 
-        # 2) Paraphrase control: SAE, different wording, no dialect features.
+        # 2) Paraphrase control: MAE, different wording, no dialect features.
         if vcfg.get("paraphrase_control", True):
             rows.append(_variant(msg, "paraphrase", "control", msg["paraphrase_text"], {}))
 
-        # 3) Name axis (SAE text + a name), only where it's audited/evaluated.
+        # 3) Name axis (MAE text + a name), only where it's audited/evaluated.
         if msg["split"] in name_splits:
             for n in names:
                 rows.append(
@@ -135,7 +135,7 @@ def cmd_variants(cfg: dict[str, Any], shard: int, num_shards: int) -> None:
 
 
 def coverage_stats(rows: list[dict[str, Any]]) -> dict[str, Any]:
-    """Per group: how often the variant differs from SAE, keeps all numbers, and which features fired."""
+    """Per group: how often the variant differs from MAE, keeps all numbers, and which features fired."""
     stats: dict[str, Any] = {}
     for r in rows:
         g = stats.setdefault(r["group"], {"n": 0, "changed": 0, "numbers_ok": 0, "errors": 0, "features": {}})
@@ -170,23 +170,48 @@ def cmd_merge(cfg: dict[str, Any]) -> None:
 
 
 def cmd_check_sample(cfg: dict[str, Any]) -> None:
-    """Random sample of dialect variants (with their SAE source) for a hand naturalness check."""
+    """Native-speaker rating sheets: one CSV per dialect group, for raters who speak that variety.
+
+    Sampling covers features: variants are drawn so every allowed feature appears in several rated rows.
+    Raters see only the MAE sentence and the variant (no feature names), and rate naturalness 1-5,
+    whether it reads as stereotyped or exaggerated, and whether the meaning is unchanged.
+    The key (which features each row contains) is kept in a separate file for the analysis.
+    See docs/dialect_validation.md.
+    """
     out = _out(cfg)
-    rows = [r for r in read_jsonl(out / "variants.jsonl") if r["axis"] == "dialect" and r["group"] != "sae"]
+    vdir = Path(cfg["variants"].get("validation_dir", "data/validation"))
+    vdir.mkdir(parents=True, exist_ok=True)
+    rows = [r for r in read_jsonl(out / "variants.jsonl")
+            if r["axis"] == "dialect" and r["group"] != "mae" and r["changed"] and r["numbers_ok"]]
     rng = random.Random(cfg["seed"])
     n = cfg["variants"]["hand_check_per_group"]
-    sample = []
+    key = []
     for g in sorted({r["group"] for r in rows}):
         grp = [r for r in rows if r["group"] == g]
-        sample += rng.sample(grp, min(n, len(grp)))
-    path = out / "variant_hand_check.csv"
-    with open(path, "w", newline="") as f:
-        w = csv.writer(f)
-        w.writerow(["variant_id", "group", "sae_text", "variant_text", "features",
-                    "natural_1to5", "meaning_preserved_yn", "notes"])
-        for r in sample:
-            w.writerow([r["variant_id"], r["group"], r["base_text"], r["text"], ";".join(r["features"]), "", "", ""])
-    print(f"[check-sample] wrote {len(sample)} rows to {path}")
+        rng.shuffle(grp)
+        # Greedy feature coverage: prefer rows containing the least-sampled features so far.
+        seen: dict[str, int] = {}
+        sample, seen_text = [], set()
+        while grp and len(sample) < n:
+            grp.sort(key=lambda r: min((seen.get(f, 0) for f in r["features"]), default=99))
+            r = grp.pop(0)
+            if r["text"] in seen_text:
+                continue
+            seen_text.add(r["text"])
+            sample.append(r)
+            for f in r["features"]:
+                seen[f] = seen.get(f, 0) + 1
+        rng.shuffle(sample)
+        with open(vdir / f"rating_sheet_{g}.csv", "w", newline="") as f:
+            w = csv.writer(f)
+            w.writerow(["row", "mae_sentence", "variant_sentence", "natural_1to5", "stereotyped_yn",
+                        "meaning_same_yn", "notes"])
+            for i, r in enumerate(sample, 1):
+                w.writerow([f"{g}-{i:03d}", r["base_text"], r["text"], "", "", "", ""])
+                key.append({"row": f"{g}-{i:03d}", "group": g, "variant_id": r["variant_id"],
+                            "features": sorted(r["features"])})
+    write_jsonl(vdir / "rating_key.jsonl", key)
+    print(f"[check-sample] wrote rating sheets for {sorted({k['group'] for k in key})} to {vdir}/ ({len(key)} rows)")
 
 
 def main(argv: list[str] | None = None) -> None:

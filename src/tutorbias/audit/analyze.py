@@ -4,13 +4,13 @@
 
 For each scorer (the judge's scaffolding and helpfulness scores, and each off-the-shelf RM):
 
-  gap(g) = mean over replies r of [ score(r, student in group g) - score(r, SAE student) ]
+  gap(g) = mean over replies r of [ score(r, student in group g) - score(r, MAE student) ]
 
 This is a *paired* difference: same problem, same reply, only the student's text changed.
 
-  * Standardized gap: gap / SD of SAE scores for that scorer, so RMs with arbitrary scales are comparable.
+  * Standardized gap: gap / SD of MAE scores for that scorer, so RMs with arbitrary scales are comparable.
   * Net of rewording: gap(g) - gap(paraphrase), per reply. The paraphrase control rewords the message
-    in SAE with no dialect features, so this isolates the dialect part of the effect.
+    in MAE with no dialect features, so this isolates the dialect part of the effect.
   * Clustered bootstrap CIs: the ~5 replies to one question share one student message, so they are not
     independent. We resample questions, not replies.
   * p-values from the bootstrap standard error, Holm-corrected across all (scorer, group) tests in the family.
@@ -20,7 +20,7 @@ This is a *paired* difference: same problem, same reply, only the student's text
   * Heterogeneity by reply style: is the gap larger for answer-giving replies than for hints? If an RM
     penalizes hints *more* for some students, a tutor trained on it learns to give those students answers.
 
-Every table is computed on all variants and on `changed_only` (variants that differ from SAE).
+Every table is computed on all variants and on `changed_only` (variants that differ from MAE).
 """
 
 from __future__ import annotations
@@ -137,7 +137,7 @@ def gap_table(df: pd.DataFrame, scorers: list[str], acfg: dict[str, Any], seed: 
 
 
 def flip_table(df: pd.DataFrame, scorers: list[str], acfg: dict[str, Any], seed: int, eps: float = 1e-6) -> pd.DataFrame:
-    """Share of within-question reply pairs whose preference order reverses vs the SAE student."""
+    """Share of within-question reply pairs whose preference order reverses vs the MAE student."""
     base = acfg["baseline_group"]
     rows = []
     for s in scorers:
@@ -163,7 +163,7 @@ def flip_table(df: pd.DataFrame, scorers: list[str], acfg: dict[str, Any], seed:
 
 
 def label_change_table(df: pd.DataFrame, acfg: dict[str, Any], seed: int) -> pd.DataFrame:
-    """Judge only: how often the discrete scaffolding label (-1/0/+1) changes vs the SAE student."""
+    """Judge only: how often the discrete scaffolding label (-1/0/+1) changes vs the MAE student."""
     if "judge_label" not in df:
         return pd.DataFrame()
     base = acfg["baseline_group"]
@@ -198,13 +198,13 @@ def by_style_table(df: pd.DataFrame, scorers: list[str], acfg: dict[str, Any], s
 
 # --------------------------------------------------------------------------------------------- figure
 def forest_plot(gaps: pd.DataFrame, path: Path, subset: str = "all") -> None:
-    """One panel per scorer: standardized gap vs SAE with 95% CI for each student group."""
+    """One panel per scorer: standardized gap vs MAE with 95% CI for each student group."""
     import matplotlib
 
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
 
-    g = gaps[(gaps["subset"] == subset) & (gaps["vs"] == "sae")]
+    g = gaps[(gaps["subset"] == subset) & (gaps["vs"] == "mae")]
     if g.empty:
         return
     scorers = list(dict.fromkeys(g["scorer"]))
@@ -221,10 +221,10 @@ def forest_plot(gaps: pd.DataFrame, path: Path, subset: str = "all") -> None:
         ax.scatter(d["gap_std"], y, c=np.where(sig, "#c2410c", "#64748b"), s=18, zorder=3)
         ax.set_title(s.replace("_", " "), fontsize=8)
         ax.tick_params(labelsize=7)
-        ax.set_xlabel("gap vs SAE (SD units)", fontsize=7)
+        ax.set_xlabel("gap vs MAE (SD units)", fontsize=7)
     axes[0][0].set_yticks(np.arange(len(groups)), [x.replace("name_", "name: ") for x in groups])
     axes[0][0].invert_yaxis()
-    fig.suptitle("Same reply, different student: score gap vs Standard American English (95% CI; orange = Holm p<.05)",
+    fig.suptitle("Same reply, different student: score gap vs Mainstream American English (95% CI; orange = Holm p<.05)",
                  fontsize=8)
     fig.tight_layout()
     fig.savefig(path)
@@ -233,9 +233,9 @@ def forest_plot(gaps: pd.DataFrame, path: Path, subset: str = "all") -> None:
 
 def write_summary(gaps: pd.DataFrame, flips: pd.DataFrame, labels: pd.DataFrame, path: Path) -> None:
     lines = ["# Reward-model audit (E2)", "",
-             "Gap = mean paired score difference vs the SAE student, in SD units of that scorer's SAE scores. "
+             "Gap = mean paired score difference vs the MAE student, in SD units of that scorer's MAE scores. "
              "CIs resample questions. p is Holm-corrected within each subset.", ""]
-    g = gaps[(gaps["subset"] == "all") & (gaps["vs"] == "sae")]
+    g = gaps[(gaps["subset"] == "all") & (gaps["vs"] == "mae")]
     lines += ["| Scorer | Group | Gap (SD) | 95% CI | Holm p | Net of paraphrase |", "|---|---|---|---|---|---|"]
     for _, r in g.iterrows():
         net = f"{r['net_of_paraphrase_std']:+.3f}" if pd.notna(r.get("net_of_paraphrase_std")) else ""
@@ -279,7 +279,7 @@ def main(argv: list[str] | None = None) -> None:
     print((out / "summary.md").read_text())
 
     run = init_run("audit-analyze", cfg)
-    for _, r in gaps[(gaps["subset"] == "all") & (gaps["vs"] == "sae")].iterrows():
+    for _, r in gaps[(gaps["subset"] == "all") & (gaps["vs"] == "mae")].iterrows():
         run.summary({f"gap_std/{r['scorer']}/{r['group']}": r["gap_std"], f"p_holm/{r['scorer']}/{r['group']}": r["p_holm"]})
     run.log_table("gaps", json.loads(gaps.to_json(orient="records")))
     run.finish()

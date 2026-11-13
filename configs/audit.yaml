@@ -24,7 +24,7 @@ reward_models:
     batch_size: 1
 
 analysis:
-  baseline_group: sae
+  baseline_group: mae
   name_baseline_group: name_white
   n_boot: 2000
   alpha: 0.05

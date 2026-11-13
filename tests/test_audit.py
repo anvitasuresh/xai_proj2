@@ -15,9 +15,9 @@ from tutorbias.audit.analyze import (
 from tutorbias.audit.pairs import build_pairs
 from tutorbias.audit.reward_models import rm_conversation
 
-ACFG = {"baseline_group": "sae", "name_baseline_group": "name_white", "n_boot": 500, "alpha": 0.05}
-GROUPS = ["sae", "aae", "paraphrase", "name_white", "name_black"]
-EFFECT = {"sae": 0.0, "aae": -0.5, "paraphrase": 0.0, "name_white": 0.0, "name_black": 0.0}
+ACFG = {"baseline_group": "mae", "name_baseline_group": "name_white", "n_boot": 500, "alpha": 0.05}
+GROUPS = ["mae", "aae", "paraphrase", "name_white", "name_black"]
+EFFECT = {"mae": 0.0, "aae": -0.5, "paraphrase": 0.0, "name_white": 0.0, "name_black": 0.0}
 
 
 def synthetic(n_items=80, n_replies=4, seed=0):
@@ -32,14 +32,14 @@ def synthetic(n_items=80, n_replies=4, seed=0):
                 rows.append({"pair_id": f"q{i}r{k}||{g}", "reply_id": f"q{i}r{k}", "item_id": f"q{i}",
                              "style": "hint" if k % 2 else "answer", "group": g,
                              "axis": "name" if g.startswith("name_") else ("control" if g == "paraphrase" else "dialect"),
-                             "changed": g != "sae", "rm": score,
+                             "changed": g != "mae", "rm": score,
                              "judge_label": int(np.sign(base)) if g != "aae" else int(np.sign(base - 1))})
     return pd.DataFrame(rows)
 
 
 def test_gap_detects_injected_bias_and_not_null_groups():
     gaps = gap_table(synthetic(), ["rm"], ACFG, seed=0)
-    g = gaps[(gaps["subset"] == "all") & (gaps["vs"] == "sae")].set_index("group")
+    g = gaps[(gaps["subset"] == "all") & (gaps["vs"] == "mae")].set_index("group")
     sd = g.loc["aae", "sd_baseline"]
     assert g.loc["aae", "gap_raw"] == pytest.approx(-0.5, abs=0.02)
     assert g.loc["aae", "ci_hi"] < 0 and g.loc["aae", "p_holm"] < 0.01
@@ -79,13 +79,13 @@ def test_holm():
 def test_build_pairs_drops_number_changes():
     pool = [{"reply_id": "r1", "item_id": "q1", "message_id": "m1", "style": "s", "source_model": "m", "text": "hint"}]
     variants = [
-        {"variant_id": "v_sae", "message_id": "m1", "message_type": "t", "axis": "dialect", "group": "sae",
+        {"variant_id": "v_sae", "message_id": "m1", "message_type": "t", "axis": "dialect", "group": "mae",
          "changed": False, "features": {}, "numbers_ok": True, "text": "I got 3"},
         {"variant_id": "v_bad", "message_id": "m1", "message_type": "t", "axis": "dialect", "group": "aae",
          "changed": True, "features": {"f": 1}, "numbers_ok": False, "text": "I got 4"},
     ]
     pairs, stats = build_pairs(pool, variants, {"q1": {"question": "Q", "final_answer": "5"}})
-    assert [p["group"] for p in pairs] == ["sae"]
+    assert [p["group"] for p in pairs] == ["mae"]
     assert stats["dropped_numbers_changed"] == {"aae": 1}
     assert pairs[0]["student_message"] == "I got 3" and pairs[0]["reply"] == "hint"
 
