@@ -26,7 +26,7 @@ gpu = ["vllm>=0.6.3", "torch>=2.4", "transformers>=4.45", "datasets>=2.20"]
 # Small CPU fallback for the judge (tests, debugging with tiny models).
 hf = ["torch>=2.4", "transformers>=4.45"]
 # Dialect env: Multi-VALUE pins spacy/nltk/stanza, so it lives in its own env (see docs/design_decisions.md).
-dialect = ["value-nlp==0.3"]
+dialect = ["value-nlp==0.3", "numpy<2"]  # spaCy 3.7 / thinc 8.2 wheels are built against numpy 1.x
 api = ["openai>=1.40"]
 label = ["streamlit>=1.36"]
 track = ["wandb>=0.17"]

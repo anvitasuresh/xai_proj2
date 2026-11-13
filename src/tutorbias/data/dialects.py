@@ -31,6 +31,17 @@ class IdentityTransformer:
         return text, {}
 
 
+def _skip_spacy_download_if_installed() -> None:
+    """Multi-VALUE's __init__ calls spacy.cli.download("en_core_web_sm") on every import, which shells
+    out to pip (missing in uv venvs) and races when several shards start at once. setup_local.sh already
+    installs the model, so make that call a no-op when the model is present."""
+    import spacy
+    import spacy.cli
+
+    if spacy.util.is_package("en_core_web_sm"):
+        spacy.cli.download = lambda *args, **kwargs: None
+
+
 class MultiValueTransformer:
     """Wraps a Multi-VALUE dialect, either a named eWAVE variety or an explicit feature list.
 
@@ -40,6 +51,7 @@ class MultiValueTransformer:
     """
 
     def __init__(self, name: str, spec: dict[str, Any]):
+        _skip_spacy_download_if_installed()
         from multivalue import Dialects  # heavy import: spaCy + stanza pipelines
 
         self.name = name

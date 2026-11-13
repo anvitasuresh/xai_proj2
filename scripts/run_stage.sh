@@ -8,7 +8,7 @@
 #   bash scripts/run_stage.sh judge       GPU   judge scores + rationales on label set (~10 min)
 #   bash scripts/run_stage.sh audit       GPU   E2 audit: pairs, judge + 2 RMs, analysis (~2-3 h)
 #
-# Env vars: SHARDS (variants; default = CPU count), SHARD (run only one shard, used by SLURM arrays),
+# Env vars: SHARDS (variants; default = min(CPU count, 4)), SHARD (run only one shard, used by SLURM arrays),
 # PROFILE (t4 = Kaggle 2x T4 settings), DATA_CONFIG (items/variants), MODELS (replies; default "qwen1.5b qwen7b"), SCORERS (audit; default "judge skywork_v2 armorm").
 # Uses .venv-data / .venv-gpu if they exist (scripts/setup_local.sh); otherwise the active Python.
 set -euo pipefail
@@ -33,16 +33,25 @@ case "$STAGE" in
   variants)
     P=$(py data)
     test -f data/processed/messages_test.jsonl || { echo "Run 'items' first."; exit 1; }
-    N="${SHARDS:-$(nproc 2>/dev/null || sysctl -n hw.ncpu)}"
+    # Each shard loads its own spaCy + stanza pipelines (~1.5-2 GB RAM), so default to at most 4.
+    NCPU="$(nproc 2>/dev/null || sysctl -n hw.ncpu)"
+    N="${SHARDS:-$(( NCPU < 4 ? NCPU : 4 ))}"
     if [ -n "${SHARD:-}" ]; then
       $P -m tutorbias.data.build variants --config "$DATA_CFG" --shard "$SHARD" --num-shards "$N"
     else
-      rm -f data/processed/variants.shard*.jsonl
+      rm -f data/processed/variants.shard*.jsonl logs/variants-shard*.log
+      echo "Running $N shards in parallel; progress in logs/variants-shard*.log"
+      pids=()
       for i in $(seq 0 $((N - 1))); do
         $P -m tutorbias.data.build variants --config "$DATA_CFG" --shard "$i" --num-shards "$N" \
           > "logs/variants-shard$i.log" 2>&1 &
+        pids+=($!)
       done
-      wait
+      failed=0
+      for i in "${!pids[@]}"; do
+        wait "${pids[$i]}" || { echo "Shard $i FAILED, see logs/variants-shard$i.log:"; tail -5 "logs/variants-shard$i.log"; failed=1; }
+      done
+      [ "$failed" -eq 0 ] || exit 1
     fi
     # Merge once every shard is written (in a SLURM array, the last shard to finish does this).
     if [ "$(ls data/processed/variants.shard*-of-$(printf %02d "$N").jsonl 2>/dev/null | wc -l)" -eq "$N" ]; then

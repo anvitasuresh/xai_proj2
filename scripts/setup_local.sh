@@ -10,12 +10,13 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 WHICH="${1:-all}"
-mkvenv() {  # mkvenv <name> <python-version>
-  if [ -n "${VENV_ROOT:-}" ]; then
-    uv venv --python "$2" "$VENV_ROOT/.venv-$1" && ln -sfn "$VENV_ROOT/.venv-$1" ".venv-$1"
-  else
-    uv venv --python "$2" ".venv-$1"
-  fi
+mkvenv() {  # mkvenv <name> <python-version>; recreates the env from scratch, with pip included
+  local dir=".venv-$1"
+  [ -n "${VENV_ROOT:-}" ] && dir="$VENV_ROOT/.venv-$1"
+  rm -rf "$dir" ".venv-$1"
+  uv venv --seed --python "$2" "$dir"
+  [ -n "${VENV_ROOT:-}" ] && ln -sfn "$dir" ".venv-$1"
+  return 0
 }
 command -v uv >/dev/null || { curl -LsSf https://astral.sh/uv/install.sh | sh; export PATH="$HOME/.local/bin:$PATH"; }
 
