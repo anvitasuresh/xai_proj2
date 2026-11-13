@@ -93,6 +93,6 @@ case "$STAGE" in
     $P -m tutorbias.audit.analyze --config "$(cfg audit)"
     ;;
   *)
-    sed -n "2,18p" "$0"
+    sed -n "2,/^set -euo/p" "$0" | grep "^#"
     ;;
 esac
